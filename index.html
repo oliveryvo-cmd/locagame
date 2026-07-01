@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOCA: Rise of the Cool Abilities</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;}
+#renderCanvas{width:100vw;height:100vh;display:block;touch-action:none;}
+
+#hud{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10;display:none;}
+#logo{position:absolute;top:20px;left:24px;font-size:1.4rem;font-weight:900;background:linear-gradient(135deg,#b8860b,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+#health-wrap{position:absolute;top:20px;right:24px;}
+#health-label{font-size:0.6rem;letter-spacing:2px;color:#ffd700;font-weight:900;text-align:right;margin-bottom:4px;}
+#health-track{width:180px;height:8px;background:rgba(255,255,255,0.1);border-radius:50px;overflow:hidden;}
+#health-fill{height:100%;width:100%;background:linear-gradient(90deg,#ff4757,#ffd700);border-radius:50px;}
+#crosshair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);}
+#crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.9);}
+#crosshair::before{width:2px;height:100%;left:9px;}
+#crosshair::after{width:100%;height:2px;top:9px;}
+#char-info{position:absolute;bottom:80px;left:24px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,215,0,0.4);border-radius:12px;padding:12px 16px;}
+#char-name{font-size:0.9rem;font-weight:900;color:#ffd700;}
+#char-power{font-size:0.65rem;color:#aaa;margin-top:3px;}
+#controls-hint{position:absolute;bottom:24px;right:24px;background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;font-size:0.65rem;color:#666;line-height:2;}
+#controls-hint span{color:#ffd700;font-weight:900;}
+#killfeed{position:absolute;top:70px;right:24px;display:flex;flex-direction:column;gap:6px;}
+.kf{background:rgba(0,0,0,0.65);border-left:3px solid #ffd700;padding:5px 12px;font-size:0.72rem;color:#fff;border-radius:0 8px 8px 0;animation:kfFade 3s forwards;}
+@keyframes kfFade{0%,70%{opacity:1;}100%{opacity:0;}}
+#flash{position:absolute;inset:0;pointer-events:none;transition:background 0.1s;}
+
+#charSelect{position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;}
+#charSelect h2{font-size:2.2rem;font-weight:900;color:#fff;margin-bottom:6px;}
+#charSelect p{font-size:0.75rem;letter-spacing:3px;color:#555;margin-bottom:40px;}
+.chars{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:860px;padding:0 20px;}
+.cc{width:155px;border-radius:20px;padding:24px 14px;background:rgba(255,255,255,0.03);border:2px solid rgba(255,255,255,0.07);cursor:pointer;transition:all 0.2s;text-align:center;}
+.cc:hover{border-color:#ffd700;transform:translateY(-8px);box-shadow:0 20px 40px rgba(255,215,0,0.15);}
+.cc-emoji{font-size:3rem;margin-bottom:12px;}
+.cc-name{font-size:0.9rem;font-weight:900;color:#fff;margin-bottom:4px;}
+.cc-ability{font-size:0.62rem;color:#ffd700;letter-spacing:1px;font-weight:700;margin-bottom:8px;}
+.cc-desc{font-size:0.65rem;color:#555;line-height:1.5;}
+
+#loading{position:fixed;inset:0;background:#000;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#l-logo{font-size:3rem;font-weight:900;background:linear-gradient(135deg,#b8860b,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
+#l-sub{font-size:0.65rem;letter-spacing:4px;color:#333;margin-bottom:48px;}
+#l-track{width:280px;height:3px;background:#111;border-radius:50px;overflow:hidden;}
+#l-bar{height:100%;width:0%;background:linear-gradient(90deg,#b8860b,#ffd700);border-radius:50px;transition:width 0.2s;}
+#l-txt{font-size:0.65rem;color:#333;margin-top:14px;letter-spacing:2px;}
+</style>
+</head>
+<body>
+
+<canvas id="renderCanvas"></canvas>
+
+<div id="loading">
+  <div id="l-logo">✨ LOCA</div>
+  <div id="l-sub">RISE OF THE COOL ABILITIES</div>
+  <div id="l-track"><div id="l-bar"></div></div>
+  <div id="l-txt">LOADING...</div>
+</div>
+
+<div id="charSelect">
+  <h2>Choose Your Hero</h2>
+  <p>EVERY HERO HAS A COOL ABILITY</p>
+  <div class="chars">
+    <div class="cc" onclick="pick(0)"><div class="cc-emoji">⚡</div><div class="cc-name">Oliver</div><div class="cc-ability">TOURETTE SPEED</div><div class="cc-desc">Moves 2x fast. Tics become lightning strikes.</div></div>
+    <div class="cc" onclick="pick(1)"><div class="cc-emoji">🧠</div><div class="cc-name">Maya</div><div class="cc-ability">AUTISM FOCUS</div><div class="cc-desc">Sees enemies through walls. Never misses.</div></div>
+    <div class="cc" onclick="pick(2)"><div class="cc-emoji">🚀</div><div class="cc-name">Jordan</div><div class="cc-ability">ROCKET CHAIR</div><div class="cc-desc">Rocket wheelchair. Fastest in the game.</div></div>
+    <div class="cc" onclick="pick(3)"><div class="cc-emoji">💥</div><div class="cc-name">Zara</div><div class="cc-ability">ADHD HYPERFOCUS</div><div class="cc-desc">Time slows down. Sees everything others miss.</div></div>
+    <div class="cc" onclick="pick(4)"><div class="cc-emoji">🌊</div><div class="cc-name">Eli</div><div class="cc-ability">VIBRATION SENSE</div><div class="cc-desc">Feels enemies coming. Never gets snuck up on.</div></div>
+  </div>
+</div>
+
+<div id="hud">
+  <div id="logo">✨ LOCA</div>
+  <div id="health-wrap">
+    <div id="health-label">HEALTH</div>
+    <div id="health-track"><div id="health-fill"></div></div>
+  </div>
+  <div id="crosshair"></div>
+  <div id="flash"></div>
+  <div id="killfeed"></div>
+  <div id="char-info">
+    <div id="char-name">⚡ Oliver</div>
+    <div id="char-power">PRESS F — Lightning Strike</div>
+  </div>
+  <div id="controls-hint">
+    <span>WASD</span> Move &nbsp;<span>MOUSE</span> Look<br>
+    <span>SPACE</span> Jump &nbsp;<span>SHIFT</span> Sprint<br>
+    <span>F</span> Superpower &nbsp;<span>Click</span> Lock mouse
+  </div>
+</div>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script>
+const CHARS = [
+  {name:'Oliver',emoji:'⚡',ability:'TOURETTE SPEED',power:'Lightning Strike',color:[1,0.85,0.1],speed:14},
+  {name:'Maya',  emoji:'🧠',ability:'AUTISM FOCUS',  power:'Wall Vision',    color:[0.3,0.6,1], speed:10},
+  {name:'Jordan',emoji:'🚀',ability:'ROCKET CHAIR',  power:'Rocket Boost',   color:[1,0.42,0.2],speed:16},
+  {name:'Zara',  emoji:'💥',ability:'ADHD HYPERFOCUS',power:'Time Slow',     color:[0.66,0.34,0.97],speed:11},
+  {name:'Eli',   emoji:'🌊',ability:'VIBRATION SENSE',power:'Shockwave',     color:[0.18,0.83,0.45],speed:12},
+];
+
+let hp = 100, spCool = 0, chosen = null;
+const keys = {};
+
+// Loading bar
+let pct = 0;
+const msgs = ['LOADING WORLD...','BUILDING CITY...','PLACING HEROES...','ALMOST READY...','READY!'];
+const li = setInterval(()=>{
+  pct = Math.min(100, pct + Math.random()*6+2);
+  document.getElementById('l-bar').style.width = pct+'%';
+  document.getElementById('l-txt').textContent = msgs[Math.min(4,Math.floor(pct/25))];
+  if(pct>=100){ clearInterval(li); setTimeout(()=>{ document.getElementById('loading').style.display='none'; document.getElementById('charSelect').style.display='flex'; },300); }
+},60);
+
+window.pick = function(i){
+  chosen = CHARS[i];
+  document.getElementById('charSelect').style.display='none';
+  document.getElementById('hud').style.display='block';
+  document.getElementById('char-name').textContent = chosen.emoji+' '+chosen.name;
+  document.getElementById('char-power').textContent = 'PRESS F — '+chosen.power;
+  startGame();
+};
+
+function kf(msg){
+  const d=document.createElement('div');
+  d.className='kf'; d.textContent=msg;
+  document.getElementById('killfeed').appendChild(d);
+  setTimeout(()=>d.remove(),3000);
+}
+
+function flash(r,g,b,a){
+  const f=document.getElementById('flash');
+  f.style.background=`rgba(${r},${g},${b},${a})`;
+  setTimeout(()=>f.style.background='rgba(0,0,0,0)',150);
+}
+
+function startGame(){
+  const canvas = document.getElementById('renderCanvas');
+  const engine = new BABYLON.Engine(canvas, true);
+  const scene  = new BABYLON.Scene(engine);
+
+  scene.clearColor = new BABYLON.Color4(0.45, 0.65, 0.95, 1);
+  scene.fogMode    = BABYLON.Scene.FOGMODE_LINEAR;
+  scene.fogStart   = 80; scene.fogEnd = 200;
+  scene.fogColor   = new BABYLON.Color3(0.6, 0.75, 0.95);
+
+  // Lights
+  const sun = new BABYLON.DirectionalLight('sun', new BABYLON.Vector3(-1,-2,-1), scene);
+  sun.intensity = 1.2;
+  const hem = new BABYLON.HemisphericLight('hem', new BABYLON.Vector3(0,1,0), scene);
+  hem.intensity = 0.5;
+
+  // Shadows
+  const sg = new BABYLON.ShadowGenerator(1024, sun);
+  sg.useBlurExponentialShadowMap = true;
+
+  // Ground
+  const ground = BABYLON.MeshBuilder.CreateGround('g',{width:300,height:300,subdivisions:4},scene);
+  const gm = new BABYLON.StandardMaterial('gm',scene);
+  gm.diffuseColor = new BABYLON.Color3(0.22,0.42,0.18);
+  gm.specularColor = new BABYLON.Color3(0,0,0);
+  ground.material = gm;
+  ground.receiveShadows = true;
+  ground.checkCollisions = true;
+
+  // Roads
+  [[0,0,8,300],[0,0,300,8],[55,0,8,300],[-55,0,8,300],[0,55,300,8],[0,-55,300,8]].forEach(([x,z,w,d])=>{
+    const r=BABYLON.MeshBuilder.CreateGround('r',{width:w,height:d},scene);
+    r.position.set(x,0.01,z);
+    const rm=new BABYLON.StandardMaterial('rm',scene);
+    rm.diffuseColor=new BABYLON.Color3(0.15,0.15,0.16);
+    r.material=rm; r.receiveShadows=true;
+  });
+
+  // Buildings
+  function building(x,z,w,h,d,cr,cg,cb){
+    const b=BABYLON.MeshBuilder.CreateBox('b',{width:w,height:h,depth:d},scene);
+    b.position.set(x,h/2,z);
+    const bm=new BABYLON.StandardMaterial('bm'+x+z,scene);
+    bm.diffuseColor=new BABYLON.Color3(cr,cg,cb);
+    bm.specularColor=new BABYLON.Color3(0.2,0.2,0.3);
+    b.material=bm; b.receiveShadows=true; b.checkCollisions=true;
+    sg.addShadowCaster(b);
+    // glow windows
+    for(let y=3;y<h-2;y+=3.5){
+      const wp=BABYLON.MeshBuilder.CreateBox('w',{width:w+0.05,height:1.4,depth:d+0.05},scene);
+      wp.position.set(x,h/2-h/2+y,z);
+      const wm=new BABYLON.StandardMaterial('wm',scene);
+      wm.emissiveColor=Math.random()>.25?new BABYLON.Color3(0.9,0.85,0.5):new BABYLON.Color3(0.05,0.1,0.25);
+      wm.wireframe=false; wp.material=wm;
+    }
+  }
+  [
+    [22,22,14,38,14,.70,.72,.74],[22,-22,12,50,12,.65,.67,.70],
+    [-22,22,16,44,16,.72,.70,.68],[-22,-22,18,56,18,.68,.70,.73],
+    [77,22,12,42,12,.74,.72,.70],[77,-22,14,32,14,.70,.68,.72],
+    [-77,22,16,48,16,.72,.74,.76],[-77,-22,12,36,12,.68,.66,.70],
+    [22,77,14,40,14,.74,.72,.70],[22,-77,12,34,12,.70,.72,.74],
+    [-22,77,16,54,16,.72,.70,.72],[-22,-77,14,42,14,.70,.68,.65],
+  ].forEach(d=>building(...d));
+
+  // Trees
+  [[6,28],[6,-28],[-6,28],[-6,-28],[28,6],[28,-6],[-28,6],[-28,-6],
+   [35,35],[35,-35],[-35,35],[-35,-35]].forEach(([x,z])=>{
+    const tk=BABYLON.MeshBuilder.CreateCylinder('tk',{height:3.5,diameter:0.5},scene);
+    tk.position.set(x,1.75,z);
+    const tkm=new BABYLON.StandardMaterial('tkm',scene);
+    tkm.diffuseColor=new BABYLON.Color3(0.35,0.2,0.08); tk.material=tkm;
+    sg.addShadowCaster(tk);
+    const lv=BABYLON.MeshBuilder.CreateSphere('lv',{diameter:5,segments:5},scene);
+    lv.position.set(x,6,z); lv.scaling.y=1.2;
+    const lvm=new BABYLON.StandardMaterial('lvm',scene);
+    lvm.diffuseColor=new BABYLON.Color3(0.12+Math.random()*.1,0.48+Math.random()*.12,0.1);
+    lv.material=lvm; lv.receiveShadows=true; sg.addShadowCaster(lv);
+  });
+
+  // Player
+  const player=BABYLON.MeshBuilder.CreateCapsule('player',{height:1.8,radius:0.4,tessellation:8},scene);
+  player.position.set(0,0.9,0);
+  const pm=new BABYLON.StandardMaterial('pm',scene);
+  pm.diffuseColor=new BABYLON.Color3(...chosen.color);
+  pm.emissiveColor=new BABYLON.Color3(...chosen.color.map(v=>v*0.15));
+  player.material=pm;
+  player.checkCollisions=true;
+  player.applyGravity=true;
+  player.ellipsoid=new BABYLON.Vector3(0.4,0.9,0.4);
+  player.ellipsoidOffset=new BABYLON.Vector3(0,0.9,0);
+  sg.addShadowCaster(player);
+
+  // Camera
+  const cam=new BABYLON.ArcRotateCamera('cam',-Math.PI/2,Math.PI/3.2,10,new BABYLON.Vector3(0,1.5,0),scene);
+  cam.lowerRadiusLimit=4; cam.upperRadiusLimit=18;
+  cam.upperBetaLimit=Math.PI/2.1; cam.lowerBetaLimit=0.15;
+  cam.attachControl(canvas,true);
+
+  // Particles on player
+  const ps=new BABYLON.ParticleSystem('ps',60,scene);
+  ps.emitter=player;
+  ps.minEmitBox=new BABYLON.Vector3(-0.3,0,-0.3);
+  ps.maxEmitBox=new BABYLON.Vector3(0.3,1.5,0.3);
+  ps.color1=new BABYLON.Color4(1,.9,.2,1);
+  ps.color2=new BABYLON.Color4(1,.5,.1,.5);
+  ps.colorDead=new BABYLON.Color4(0,0,0,0);
+  ps.minSize=0.04; ps.maxSize=0.18;
+  ps.minLifeTime=0.3; ps.maxLifeTime=0.7;
+  ps.emitRate=15;
+  ps.blendMode=BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+  ps.gravity=new BABYLON.Vector3(0,2,0);
+  ps.direction1=new BABYLON.Vector3(-1,2,-1);
+  ps.direction2=new BABYLON.Vector3(1,4,1);
+  ps.minEmitPower=0.5; ps.maxEmitPower=1.5;
+  ps.updateSpeed=0.02; ps.start();
+
+  // Enemies
+  const enemies=[];
+  [[38,38],[38,-38],[-38,38],[-38,-38],[75,5],[-75,5],[5,75],[5,-75]].forEach(([x,z])=>{
+    const e=BABYLON.MeshBuilder.CreateCapsule('e',{height:1.8,radius:0.4,tessellation:6},scene);
+    e.position.set(x,0.9,z);
+    const em=new BABYLON.StandardMaterial('em',scene);
+    em.diffuseColor=new BABYLON.Color3(0.85,0.1,0.1);
+    e.material=em; e.hp=100; enemies.push(e);
+    sg.addShadowCaster(e);
+  });
+
+  // Input
+  window.addEventListener('keydown',e=>keys[e.code]=true);
+  window.addEventListener('keyup',e=>keys[e.code]=false);
+
+  let vy=0, spCooldown=0;
+  scene.gravity=new BABYLON.Vector3(0,-0.5,0);
+  scene.collisionsEnabled=true;
+
+  engine.runRenderLoop(()=>{
+    const dt=engine.getDeltaTime()/1000;
+    spCooldown=Math.max(0,spCooldown-dt);
+
+    // Move
+    const spd=(chosen.speed)*(keys['ShiftLeft']||keys['ShiftRight']?1.7:1);
+    const fwd=cam.getForwardRay().direction;
+    const F=new BABYLON.Vector3(fwd.x,0,fwd.z).normalize();
+    const R=BABYLON.Vector3.Cross(BABYLON.Vector3.Up(),F).normalize();
+    let mv=BABYLON.Vector3.Zero();
+    if(keys['KeyW']||keys['ArrowUp'])   mv.addInPlace(F);
+    if(keys['KeyS']||keys['ArrowDown']) mv.subtractInPlace(F);
+    if(keys['KeyA']||keys['ArrowLeft']) mv.addInPlace(R);
+    if(keys['KeyD']||keys['ArrowRight'])mv.subtractInPlace(R);
+    if(mv.length()>0) mv.normalize();
+
+    // Jump + gravity
+    const ray=new BABYLON.Ray(player.position,new BABYLON.Vector3(0,-1,0),1.05);
+    const hit=scene.pickWithRay(ray,m=>m!==player&&m.name!=='lv'&&m.name!=='b');
+    const grounded=hit&&hit.hit;
+    if(grounded){ if(keys['Space']){vy=8;keys['Space']=false;}else vy=0; }
+    else vy=Math.max(vy-25*dt,-20);
+
+    const vel=mv.scale(spd*dt);
+    vel.y=vy*dt;
+    player.moveWithCollisions(vel);
+    if(player.position.y<0.9){player.position.y=0.9;vy=0;}
+
+    // Camera
+    cam.target=BABYLON.Vector3.Lerp(cam.target,player.position.add(new BABYLON.Vector3(0,1,0)),0.12);
+
+    // Superpower
+    if(keys['KeyF']&&spCooldown<=0){
+      spCooldown=5; keys['KeyF']=false;
+      flash(255,215,0,0.35);
+      kf('⚡ '+chosen.name+' used '+chosen.power+'!');
+    }
+
+    // Enemy AI
+    enemies.forEach(e=>{
+      if(e.isDisposed()) return;
+      const d=player.position.subtract(e.position);
+      d.y=0;
+      if(d.length()<80){
+        d.normalize();
+        e.position.addInPlace(d.scale(2.5*dt));
+        if(d.length()<2.5){
+          hp=Math.max(0,hp-4*dt);
+          document.getElementById('health-fill').style.width=hp+'%';
+          flash(255,0,0,0.2);
+        }
+      }
+    });
+
+    scene.render();
+  });
+
+  window.addEventListener('resize',()=>engine.resize());
+}
+</script>
+</body>
+</html>
