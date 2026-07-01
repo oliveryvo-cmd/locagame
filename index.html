@@ -113,6 +113,72 @@ window.pick=function(i){
 };
 function kf(msg){const d=document.createElement('div');d.className='kf';d.textContent=msg;document.getElementById('killfeed').appendChild(d);setTimeout(()=>d.remove(),3000);}
 function flash(r,g,b,a){const f=document.getElementById('flash');f.style.background=`rgba(${r},${g},${b},${a})`;setTimeout(()=>f.style.background='rgba(0,0,0,0)',150);}
+let costumeAnims=[];
+function buildCostume(scene,sg,parent,char){
+  costumeAnims=[];
+  if(char.name==='Oliver'){
+    // Gold lightning cape
+    const cape=BABYLON.MeshBuilder.CreatePlane('cape',{width:0.7,height:1.1},scene);
+    cape.parent=parent;cape.position.set(0,0.25,0.38);cape.rotation.y=Math.PI;
+    const cm=new BABYLON.StandardMaterial('cm',scene);cm.diffuseColor=new BABYLON.Color3(1,0.8,0);cm.emissiveColor=new BABYLON.Color3(0.9,0.5,0);cm.alpha=0.88;cm.backFaceCulling=false;cape.material=cm;sg.addShadowCaster(cape);
+    // Lightning bolt on chest
+    const bolt=BABYLON.MeshBuilder.CreateBox('bolt',{width:0.1,height:0.22,depth:0.06},scene);bolt.parent=parent;bolt.position.set(0,0.18,-0.41);
+    const bm=new BABYLON.StandardMaterial('boltm',scene);bm.emissiveColor=new BABYLON.Color3(1,1,0.2);bolt.material=bm;
+    // Gold shoulder glow rings
+    [-0.38,0.38].forEach((x,i)=>{
+      const sp=BABYLON.MeshBuilder.CreateTorus('sp'+i,{diameter:0.28,thickness:0.05,tessellation:16},scene);sp.parent=parent;sp.position.set(x,0.32,-0.1);sp.rotation.z=Math.PI/2;
+      const spm=new BABYLON.StandardMaterial('spm'+i,scene);spm.emissiveColor=new BABYLON.Color3(1,0.8,0);spm.alpha=0.85;sp.material=spm;
+    });
+    let t=0;costumeAnims.push(dt=>{t+=dt;cape.rotation.z=Math.sin(t*3)*0.06;});
+  } else if(char.name==='Maya'){
+    // Blue focus visor
+    const visor=BABYLON.MeshBuilder.CreateBox('visor',{width:0.52,height:0.1,depth:0.46},scene);visor.parent=parent;visor.position.set(0,0.78,0);
+    const vm=new BABYLON.StandardMaterial('vm',scene);vm.diffuseColor=new BABYLON.Color3(0,0.4,1);vm.emissiveColor=new BABYLON.Color3(0,0.6,1);vm.alpha=0.9;visor.material=vm;sg.addShadowCaster(visor);
+    // Orbiting focus rings
+    const rings=[];
+    [0,1,2].forEach(i=>{
+      const r=BABYLON.MeshBuilder.CreateTorus('focring'+i,{diameter:0.85+i*0.35,thickness:0.035,tessellation:24},scene);r.parent=parent;r.position.set(0,0.55,0);r.rotation.x=Math.PI/2;
+      const rm=new BABYLON.StandardMaterial('frm'+i,scene);rm.emissiveColor=new BABYLON.Color3(0.1,0.5,1);rm.alpha=0.5-i*0.12;r.material=rm;rings.push(r);
+    });
+    let t=0;costumeAnims.push(dt=>{t+=dt;rings[0].rotation.z=t*0.8;rings[1].rotation.z=-t*0.5;rings[2].rotation.x=Math.PI/2+t*0.3;});
+  } else if(char.name==='Jordan'){
+    // Rocket wheelchair seat
+    const seat=BABYLON.MeshBuilder.CreateBox('seat',{width:0.75,height:0.14,depth:0.65},scene);seat.parent=parent;seat.position.set(0,-0.5,0);
+    const sm=new BABYLON.StandardMaterial('sm',scene);sm.diffuseColor=new BABYLON.Color3(0.7,0.25,0.1);sm.emissiveColor=new BABYLON.Color3(1,0.45,0);seat.material=sm;sg.addShadowCaster(seat);
+    const back=BABYLON.MeshBuilder.CreateBox('back',{width:0.7,height:0.6,depth:0.1},scene);back.parent=parent;back.position.set(0,-0.1,0.38);back.material=sm;sg.addShadowCaster(back);
+    // Rocket jets with glow
+    [-0.28,0.28].forEach((x,i)=>{
+      const jet=BABYLON.MeshBuilder.CreateCylinder('jet'+i,{height:0.35,diameterTop:0.18,diameterBottom:0.04},scene);jet.parent=parent;jet.position.set(x,-0.7,0.15);
+      const jm=new BABYLON.StandardMaterial('jm'+i,scene);jm.emissiveColor=new BABYLON.Color3(1,0.6,0.1);jet.material=jm;sg.addShadowCaster(jet);
+      const flame=BABYLON.MeshBuilder.CreateSphere('fl'+i,{diameter:0.18},scene);flame.parent=parent;flame.position.set(x,-0.9,0.15);
+      const flm=new BABYLON.StandardMaterial('flm'+i,scene);flm.emissiveColor=new BABYLON.Color3(1,0.4,0);flm.alpha=0.8;flame.material=flm;
+    });
+    let t=0;costumeAnims.push(dt=>{t+=dt;});
+  } else if(char.name==='Zara'){
+    // Purple ADHD exo-suit chest plate
+    const chest=BABYLON.MeshBuilder.CreateBox('chest',{width:0.58,height:0.48,depth:0.18},scene);chest.parent=parent;chest.position.set(0,0.1,-0.4);
+    const chm=new BABYLON.StandardMaterial('chm',scene);chm.diffuseColor=new BABYLON.Color3(0.35,0.08,0.65);chm.emissiveColor=new BABYLON.Color3(0.55,0.2,0.9);chest.material=chm;sg.addShadowCaster(chest);
+    // Shoulder pads
+    [-0.4,0.4].forEach((x,i)=>{
+      const sp=BABYLON.MeshBuilder.CreateBox('zsp'+i,{width:0.22,height:0.2,depth:0.28},scene);sp.parent=parent;sp.position.set(x,0.3,-0.15);sp.material=chm;sg.addShadowCaster(sp);
+    });
+    // Energy core on chest
+    const core=BABYLON.MeshBuilder.CreateSphere('core',{diameter:0.14},scene);core.parent=parent;core.position.set(0,0.12,-0.5);
+    const crm=new BABYLON.StandardMaterial('crm',scene);crm.emissiveColor=new BABYLON.Color3(0.8,0.3,1);core.material=crm;
+    let t=0;costumeAnims.push(dt=>{t+=dt;const s=1+Math.sin(t*6)*0.25;core.scaling.setAll(s);crm.emissiveColor=new BABYLON.Color3(0.8+Math.sin(t*4)*0.2,0.2,1);});
+  } else if(char.name==='Eli'){
+    // Green vibration armor helmet
+    const helm=BABYLON.MeshBuilder.CreateBox('helm',{width:0.48,height:0.38,depth:0.48},scene);helm.parent=parent;helm.position.set(0,0.8,0);
+    const hm=new BABYLON.StandardMaterial('hm2',scene);hm.diffuseColor=new BABYLON.Color3(0.05,0.4,0.2);hm.emissiveColor=new BABYLON.Color3(0.1,0.85,0.4);hm.alpha=0.82;helm.material=hm;sg.addShadowCaster(helm);
+    // Vibration rings stacked on body
+    const vrings=[];
+    [0,1,2,3].forEach(i=>{
+      const vr=BABYLON.MeshBuilder.CreateTorus('vr'+i,{diameter:0.72+i*0.22,thickness:0.048,tessellation:20},scene);vr.parent=parent;vr.position.set(0,-0.15+i*0.38,0);vr.rotation.x=Math.PI/2;
+      const vrm=new BABYLON.StandardMaterial('vrm'+i,scene);vrm.emissiveColor=new BABYLON.Color3(0.1,0.9,0.45);vrm.alpha=0.65-i*0.1;vr.material=vrm;vrings.push(vr);sg.addShadowCaster(vr);
+    });
+    let t=0;costumeAnims.push(dt=>{t+=dt;vrings.forEach((r,i)=>{r.scaling.setAll(1+Math.sin(t*5+i)*0.08);});});
+  }
+}
 function startGame(){
   const canvas=document.getElementById('renderCanvas');
   const engine=new BABYLON.Engine(canvas,true);
@@ -150,6 +216,7 @@ function startGame(){
     playerVisual=meshes[0];playerVisual.parent=player;
     playerVisual.scaling.set(chosen.scale,chosen.scale,chosen.scale);playerVisual.position.y=chosen.y;
     meshes.forEach(m=>sg.addShadowCaster(m));
+    buildCostume(scene,sg,player,chosen);
   });
   const cam=new BABYLON.ArcRotateCamera('cam',-Math.PI/2,Math.PI/2.5,7,new BABYLON.Vector3(0,0.9,0),scene);
   cam.lowerRadiusLimit=3;cam.upperRadiusLimit=15;cam.attachControl(canvas,true);
@@ -191,6 +258,7 @@ function startGame(){
     player.moveWithCollisions(vel);
     if(player.position.y<0.9){player.position.y=0.9;vy=0;}
     cam.target=BABYLON.Vector3.Lerp(cam.target,player.position.add(new BABYLON.Vector3(0,0.6,0)),0.12);
+    costumeAnims.forEach(fn=>fn(dt));
     if(keys['KeyF']&&spCooldown<=0){spCooldown=5;keys['KeyF']=false;flash(chosen.color[0]*255,chosen.color[1]*255,chosen.color[2]*255,0.3);kf(chosen.emoji+' '+chosen.name+' used '+chosen.power+'!');}
     enemies.forEach(e=>{
       if(e.isDisposed()) return;
